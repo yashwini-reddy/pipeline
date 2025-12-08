@@ -1,26 +1,37 @@
 
-name: Basic CI Workflow
+name: Commit Email Notification
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
+    branches: ['main']  # or '**' for all branches
 
 jobs:
-  build:
+  email-on-push:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Build commit list
+        id: commits
+        run: |
+          echo "COMMITS<<EOF" >> $GITHUB_ENV
+          jq -r '.commits[] | "* \(.id[:7]) - \(.message) (\(.author.name))"' "$GITHUB_EVENT_PATH" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3
         with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run tests
-        run: npm test
+          server: smtp.office365.com
+          port: 587
+          secure: true
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "🔔 Push to ${{ github.repository }} on ${{ github.ref_name }} by ${{ github.actor }}"
+          to: ${{ secrets.MAIL_TO }}
+          from: ${{ secrets.MAIL_FROM }}
+          content_type: text/html
+          body: |
+            <h2>New push detected</h2>
+            <p><strong>Repository:</strong> ${{ github.repository }}</p>
+            <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
+            <p><strong>Pusher:</strong> ${{ github.actor }}</p>
+            <p><strong>Compare:</strong> ${{ github.event.compare }}${{ github.event.compare }}</a></p>
+            <h3>Commits</h3>
