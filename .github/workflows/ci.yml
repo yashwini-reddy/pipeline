@@ -1,42 +1,30 @@
-
-name: Commit Email Notification
+name: CI
 
 on:
   push:
-    branches: ['main']  # or '**' for all branches
+    branches:
+      - "**"    # Run on every branch push
 
 jobs:
-  email-on-push:
+  notify:
     runs-on: ubuntu-latest
 
     steps:
-      # Optional: checkout isn't required to read event payload, but it's fine to omit
-      # - name: Checkout
-      #   uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Build commit list
-        id: commits
-        run: |
-          echo "COMMITS<<EOF" >> $GITHUB_ENV
-          jq -r '.commits[] | "* \(.id[:7]) - \(.message) (\(.author.name))"' "$GITHUB_EVENT_PATH" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Send email
-        uses: dawidd6/action-send-mail@v6
+      - name: Send Email Notification
+        uses: dawidd6/action-send-mail@v3
         with:
-          # Single-line connection URL (replaces server_address/port/secure/username/password)
-          connection_url: smtp+starttls://${{ secrets.SMTP_USERNAME }}:${{ secrets.SMTP_PASSWORD }}@smtp.office365.com:587
-
-          subject: "🔔 Push to ${{ github.repository }} on ${{ github.ref_name }} by ${{ github.actor }}"
-          to: ${{ secrets.MAIL_TO }}
-          from: ${{ secrets.MAIL_FROM }}
-
-          # Use HTML body for rich content
-          html_body: |
-            <h2>New push detected</h2>
-            <p><strong>Repository:</strong> ${{ github.repository }}</p>
-            <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
-            <p><strong>Pusher:</strong> ${{ github.actor }}</p>
-            <p><strong>Compare:</strong> ${{ github.event.compare }}${{ github.event.compare }}</a></p>
-            <h3>Commits</h3>
-            <pre style="font-family: monospace; white-space: pre-wrap;">${{ env.COMMITS }}</pre>
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "New Push to Repository"
+          to: "yashwinireddyg@gmail.com"
+          from: "GitHub CI <${{ secrets.EMAIL_USERNAME }}>"
+          body: |
+            A new push has been made to the repository.
+            Branch: ${{ github.ref }}
+            Commit: ${{ github.sha }}
+            Actor: ${{ github.actor }}
