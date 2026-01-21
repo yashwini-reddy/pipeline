@@ -21,33 +21,36 @@ jobs:
         with:
           server_address: smtp.gmail.com
           server_port: 587
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-
-          # Subject updates automatically
+          username: ${{ secrets.EMAIL_USERNAME }}      # YOUR EMAIL (sender)
+          password: ${{ secrets.EMAIL_PASSWORD }}      # YOUR APP PASSWORD
+          
           subject: >
             GitHub Notification -
             ${{ github.event_name == 'pull_request' && 'New Pull Request' || 'New Push' }}
 
-          # 👇 IF push → send to committer
-          # 👇 IF PR → send to team
+          # 👇 Recipient logic
           to: >
             ${{ github.event_name == 'push'
                 && github.event.head_commit.author.email
-                || 'team@example.com' }}
+                || github.event.pull_request.user.email }}
 
           from: "GitHub CI <${{ secrets.EMAIL_USERNAME }}>"
 
           body: |
-            Event   : ${{ github.event_name }}
-            Branch  : ${{ github.ref }}
-            Commit  : ${{ github.sha }}
-            Actor   : ${{ github.actor }}
+            Event        : ${{ github.event_name }}
+            Branch       : ${{ github.ref }}
+            Commit SHA   : ${{ github.sha }}
+            Actor        : ${{ github.actor }}
 
-            # For Push
+            # Push Information
             Committer Email : ${{ github.event.head_commit.author.email }}
             Commit Message  : ${{ github.event.head_commit.message }}
 
-            # For PR
-            PR Title  : ${{ github.event.pull_request.title }}
-            PR URL    : ${{ github.event.pull_request.html_url }}
+            # PR Information
+            PR Title     : ${{ github.event.pull_request.title }}
+            PR Number    : ${{ github.event.pull_request.number }}
+            PR URL       : ${{ github.event.pull_request.html_url }}
+            PR Author    : ${{ github.event.pull_request.user.login }}
+            PR Author Email : ${{ github.event.pull_request.user.email }}
+            PR Source    : ${{ github.event.pull_request.head.ref }}
+            PR Target    : ${{ github.event.pull_request.base.ref }}
